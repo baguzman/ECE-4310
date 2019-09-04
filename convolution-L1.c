@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 	image_out = (unsigned char *)calloc(ROWS * COLS,sizeof(unsigned char));
 	if(image_in == NULL || image_out == NULL)
 	{
-		printf("Unable to allocate memory\n")
+		printf("Unable to allocate memory\n");
 		exit(0);
 	}
 	
@@ -49,38 +49,43 @@ int main(int argc, char *argv[])
 	fread(image_in,1,ROWS*COLS,fin);
 	fclose(fin);
 	
-	//RUN TIMER
-	clock_gettime(CLOCK_REALTIME,&start_time);
-	printf("%ld %ld\n",(long int)start_time.tv_sec,start_time.tv_nsec);
-	
-	//CONVOLUTION ALGORITHM
-	for(r = 3; r < ROWS-3; r++)
+	int i;
+	long int total_time = 0;
+	for(i = 0; i < 10; i++)
 	{
-		for(c = 3; c < COLS-3; c++)
+		//RUN TIMER
+		clock_gettime(CLOCK_REALTIME,&start_time);
+		printf("2D CONVOLUTION:\n%ld %ld\n",(long int)start_time.tv_sec,start_time.tv_nsec);
+		
+		//CONVOLUTION ALGORITHM
+		for(r = 3; r < ROWS-3; r++)
 		{
-			sum = 0;
-			for(r2 = -3; r2 <= 3; r2++)
+			for(c = 3; c < COLS-3; c++)
 			{
-				for(c2 = -3; c2 <= 3; c2++)
+				sum = 0;
+				for(r2 = -3; r2 <= 3; r2++)
 				{
-					sum += image[(r+r2)*COLS*(c+c2)];
+					for(c2 = -3; c2 <= 3; c2++)
+					{
+						sum += image_in[(r+r2)*COLS+(c+c2)];
+					}
 				}
+				image_out[r*COLS+c] = sum/49;
 			}
-			smoothed[r*COLS+c] = sum/49;
 		}
+		
+		//STOP TIMER
+		clock_gettime(CLOCK_REALTIME,&stop_time);
+		printf("%ld %ld\n\n",(long int)stop_time.tv_sec,stop_time.tv_nsec);
+		total_time += stop_time.tv_nsec - start_time.tv_nsec;
 	}
-	
-	//STOP TIMER
-	clock_gettime(CLOCK_REALTIME,&stop_time);
-	printf("%ld %ld\n",(long int)stop_time.tv_sec,stop_time.tv_nsec);
-	
 	//PRINT OUT RESULTS
-	printf("Convolution Time: %ld\n",stop_time.tv_nsec - start_time.tv_nsec);
+	printf("Average 2D Convolution Time: %ld\n",total_time/10);
 	
 	//WRTIE OUTPUT IMAGE
 	fout = fopen("smoothed.ppm","w");
 	fprintf(fout,"P5 %d %d 255\n", COLS, ROWS);
-	fwrite(smoothed,COLS*ROWS,1,fout);
+	fwrite(image_out,COLS*ROWS,1,fout);
 	fclose(fout);
 	
 	return(0);
